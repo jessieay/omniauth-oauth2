@@ -89,7 +89,7 @@ module OmniAuth
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
         else
           self.access_token = build_access_token
-          self.access_token = access_token.refresh! if access_token.expired?
+          self.access_token = access_token.refresh! if access_token && access_token.expired?
           super
         end
       rescue ::OAuth2::Error, CallbackError => e
@@ -124,6 +124,9 @@ module OmniAuth
       def build_access_token
         verifier = request.params["code"]
         client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
+      rescue ::OAuth2::Error, ::Timeout::Error, ::Errno::ETIMEDOUT, OAuth2::TimeoutError, OAuth2::ConnectionError, ::SocketError => e
+        fail!(:invalid_credentials, e)
+        nil
       end
 
       def deep_symbolize(options)
