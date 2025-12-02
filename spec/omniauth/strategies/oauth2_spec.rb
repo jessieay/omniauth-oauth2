@@ -140,6 +140,15 @@ describe OmniAuth::Strategies::OAuth2 do
       expect(instance).to receive(:fail!).with(:csrf_detected, anything)
       instance.callback_phase
     end
+
+    it "handles the case when build_access_token returns nil" do
+      params.delete("error")
+      params.delete("error_reason")
+      allow(instance).to receive(:build_access_token).and_return(nil)
+      
+      expect(instance).to receive(:fail!).with(:invalid_credentials, anything)
+      instance.callback_phase
+    end
   end
 end
 
