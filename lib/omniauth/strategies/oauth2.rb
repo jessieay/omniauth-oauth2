@@ -89,12 +89,16 @@ module OmniAuth
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
         else
           self.access_token = build_access_token
-          self.access_token = access_token.refresh! if access_token.expired?
-          super
+          if access_token
+            self.access_token = access_token.refresh! if access_token.expired?
+            super
+          else
+            fail!(:invalid_credentials, CallbackError.new(:invalid_credentials, "Failed to build access token"))
+          end
         end
       rescue ::OAuth2::Error, CallbackError => e
         fail!(:invalid_credentials, e)
-      rescue ::Timeout::Error, ::Errno::ETIMEDOUT, OAuth2::TimeoutError, OAuth2::ConnectionError => e
+      rescue ::Timeout::Error, ::Errno::ETIMEDOUT, ::OAuth2::TimeoutError, ::OAuth2::ConnectionError => e
         fail!(:timeout, e)
       rescue ::SocketError => e
         fail!(:failed_to_connect, e)
